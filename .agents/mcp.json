@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "scrapling": {
+      "command": "C:/Users/vishn/AppData/Roaming/Python/Python314/Scripts/scrapling-mcp.exe",
+      "args": []
+    }
+  }
+}

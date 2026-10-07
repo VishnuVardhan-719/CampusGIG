@@ -1,0 +1,1 @@
+export default function Loading(){return <div className="loading" role="status" aria-label="Loading page"><div className="skeleton"/><div className="grid"><div className="skeleton"/><div className="skeleton"/><div className="skeleton"/></div><p className="muted text-small" style={{marginTop:20}}>Getting things ready…</p></div>;}

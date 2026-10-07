@@ -1,0 +1,7 @@
+# Taste
+- Wants explicit control over when execution begins: do not start builds or make changes until the user gives an explicit go-ahead ("dont start until say to start"); confirmed when the user later issued "start" as the go signal. Confidence: 0.9
+- Wants iterative progress snapshots during build days: explicitly asked for a README documenting "what we did till here," revealing a preference for checkpoint-style progress logging (not just end-of-project docs) as work proceeds; re-requested mid-session with "create a readme file of what we did and we have to do." Confidence: 0.75
+- Chose apmix as the AI provider for live AI calls (over a Gemini key) when offered the choice; confirmed a second time when the apmix key failed and a verified-working clixad fallback was offered — the user still chose to stick with apmix and supply a fresh key. Confidence: 0.85
+- Prefers to paste API keys/secrets himself rather than have the assistant pull credentials out of local config backups — interrupted the assistant's config search with "i will paste api key". Confidence: 0.55
+- Speed-first pragmatism on stack choices: offered "mongodb or postgre" and only cared that it's the "quick one [that] work[s]" — pick whichever proven option is fastest to get running, don't migrate or rebuild for purity. Confidence: 0.6
+- Communicates in very terse, informal shorthand messages (e.g., "start and use apmix", "resume", "we will use mongodb or postgre quick one work") and expects action without lengthy back-and-forth. Confidence: 0.8

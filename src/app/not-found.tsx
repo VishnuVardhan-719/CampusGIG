@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound(){return <div className="error-page"><p className="eyebrow">404 / Not found</p><h1>This opportunity took a different path.</h1><p className="muted">The page doesn’t exist, or you don’t have access to it.</p><Link href="/tasks" className="button">Explore tasks ↗</Link></div>;}

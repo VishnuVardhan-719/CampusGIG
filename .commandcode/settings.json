@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(type .local\\database.json 2>nul & type .env 2>nul | findstr /v /i \"SECRET KEY\")",
+      "Shell(findstr /b \"AI_API_KEY\" .env >nul && (for /f \"tokens=2 delims==\" %a in ('findstr /b \"AI_API_KEY\" .env') do (if \"%a\"==\"\" (echo AI_API_KEY_EMPTY) else (echo AI_API_KEY_SET))) || echo AI_API_KEY_MISSING)",
+      "Shell(node -e \"const net=require('net');const s=net.connect(51214,'localhost',()=>{console.log('DB_UP');s.end()});s.on('error',()=>{console.log('DB_DOWN')});setTimeout(()=>process.exit(0),3000)\")",
+      "Shell(npm:*)",
+      "Shell(node scripts/local-db.mjs)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

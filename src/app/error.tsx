@@ -1,0 +1,2 @@
+"use client";
+export default function ErrorPage({reset}:{error:Error&{digest?:string};reset:()=>void}){return <div className="error-page"><p className="eyebrow">A small interruption</p><h1>We couldn’t load this page.</h1><p className="muted">Please try again. If the issue continues, return to your overview.</p><button className="button" onClick={reset}>Try again</button><a href="/dashboard" className="button secondary" style={{marginLeft:12}}>Back to overview</a></div>;}

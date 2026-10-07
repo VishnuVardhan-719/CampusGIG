@@ -1,0 +1,505 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  CLIENT
+  ADMIN
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum WorkMode {
+  REMOTE
+  ONSITE
+  HYBRID
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum TaskStatus {
+  DRAFT
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  SUBMITTED
+  COMPLETED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  SHORTLISTED
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+enum ContractStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  REVISION_REQUESTED
+  APPROVED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REVISION_REQUESTED
+}
+
+enum TransactionType {
+  ESCROW_FUND
+  PAYOUT_RELEASE
+  PLATFORM_FEE
+  REFUND
+}
+
+enum TransactionStatus {
+  ESCROWED
+  RELEASED
+  REFUNDED
+  FAILED
+}
+
+enum EvidenceSourceType {
+  COMPLETION
+  REVIEW
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  passwordHash       String
+  name               String
+  role               Role
+  isActive           Boolean            @default(true)
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  isDemo             Boolean            @default(false)
+  avatarUrl          String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  studentProfile     StudentProfile?
+  clientProfile      ClientProfile?
+  skills             StudentSkill[]
+  portfolioItems     PortfolioItem[]
+  tasks              Task[]
+  applications       Application[]
+  studentContracts   Contract[]         @relation("StudentContracts")
+  clientContracts    Contract[]         @relation("ClientContracts")
+  reviewsGiven       Review[]           @relation("ReviewsGiven")
+  reviewsReceived    Review[]           @relation("ReviewsReceived")
+  clientTransactions Transaction[]      @relation("ClientTransactions")
+  studentTransactions Transaction[]     @relation("StudentTransactions")
+  notifications      Notification[]
+  messages           Message[]
+  skillEvidence      SkillEvidence[]
+  auditLogs          AuditLog[]
+  bookmarks          Bookmark[]
+  reports            Report[]           @relation("ReportsFiled")
+  reportedIn         Report[]           @relation("ReportedUsers")
+  disputes           Dispute[]
+  organizations      Organization[]
+  attachments        Attachment[]
+
+  @@index([role])
+}
+
+model StudentProfile {
+  userId      String   @id
+  college     String
+  degree      String
+  year        Int
+  bio         String   @default("")
+  city        String
+  weeklyHours Int      @default(10)
+  workMode    WorkMode @default(REMOTE)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ClientProfile {
+  userId           String  @id
+  organizationName String
+  organizationType String
+  description      String  @default("")
+  city             String
+  website          String?
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Organization {
+  id          String @id @default(cuid())
+  ownerId     String
+  name        String
+  type        String
+  description String @default("")
+  owner       User   @relation(fields: [ownerId], references: [id])
+
+  @@index([ownerId])
+}
+
+model Skill {
+  id             String          @id @default(cuid())
+  name           String          @unique
+  category       String
+  students       StudentSkill[]
+  tasks          TaskSkill[]
+  portfolioItems PortfolioItem[]
+  evidence       SkillEvidence[]
+}
+
+model StudentSkill {
+  userId      String
+  skillId     String
+  proficiency Int    @default(3)
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill       Skill  @relation(fields: [skillId], references: [id])
+
+  @@id([userId, skillId])
+  @@index([skillId])
+}
+
+model PortfolioItem {
+  id          String    @id @default(cuid())
+  studentId   String
+  title       String
+  description String
+  url         String
+  contractId  String?
+  isDemo      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  student     User      @relation(fields: [studentId], references: [id])
+  contract    Contract? @relation(fields: [contractId], references: [id])
+  skills      Skill[]
+
+  @@index([studentId])
+  @@index([contractId])
+}
+
+model Task {
+  id             String      @id @default(cuid())
+  clientId       String
+  title          String
+  description    String
+  category       String
+  difficulty     Difficulty  @default(BEGINNER)
+  budgetMin      Int
+  budgetMax      Int
+  deadline       DateTime
+  estimatedHours Int
+  workMode       WorkMode    @default(REMOTE)
+  location       String      @default("")
+  status         TaskStatus  @default(OPEN)
+  aiSummary      String?
+  isDemo         Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  client         User        @relation(fields: [clientId], references: [id])
+  skills         TaskSkill[]
+  applications   Application[]
+  contract       Contract?
+  bookmarks      Bookmark[]
+  reports        Report[]
+
+  @@index([status, category])
+  @@index([category])
+  @@index([clientId])
+  @@index([deadline])
+}
+
+model TaskSkill {
+  taskId  String
+  skillId String
+  task    Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  skill   Skill  @relation(fields: [skillId], references: [id])
+
+  @@id([taskId, skillId])
+  @@index([skillId])
+}
+
+model Application {
+  id             String            @id @default(cuid())
+  taskId         String
+  studentId      String
+  proposal       String
+  estimatedHours Int
+  proposedPrice  Int
+  matchScore     Float?
+  matchExplanation Json?
+  status         ApplicationStatus @default(PENDING)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  task           Task              @relation(fields: [taskId], references: [id])
+  student        User              @relation(fields: [studentId], references: [id])
+  contract       Contract?
+
+  @@unique([taskId, studentId])
+  @@index([studentId])
+}
+
+model Contract {
+  id            String         @id @default(cuid())
+  taskId        String         @unique
+  applicationId String         @unique
+  studentId     String
+  clientId      String
+  agreedAmount  Int
+  deadline      DateTime
+  status        ContractStatus @default(PENDING)
+  // Frozen copy of the agreed brief, captured when the contract is created.
+  // The client cannot silently re-scope; see src/lib/domain.ts buildContractScope.
+  scopeSnapshot Json
+  // Server-enforced revision allowance usage; see MAX_REVISION_COUNT in src/lib/domain.ts.
+  revisionCount Int            @default(0)
+  completedAt   DateTime?
+  isDemo        Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  task          Task           @relation(fields: [taskId], references: [id])
+  application   Application    @relation(fields: [applicationId], references: [id])
+  student       User           @relation("StudentContracts", fields: [studentId], references: [id])
+  client        User           @relation("ClientContracts", fields: [clientId], references: [id])
+  milestones    Milestone[]
+  submissions   Submission[]
+  reviews       Review[]
+  transactions  Transaction[]
+  messages      Message[]
+  evidence      SkillEvidence[]
+  portfolioItems PortfolioItem[]
+  disputes      Dispute[]
+  attachments   Attachment[]
+
+  @@index([studentId, status])
+  @@index([clientId, status])
+}
+
+model Milestone {
+  id          String          @id @default(cuid())
+  contractId  String
+  title       String
+  amount      Int
+  deadline    DateTime
+  status      MilestoneStatus @default(PENDING)
+  contract    Contract        @relation(fields: [contractId], references: [id])
+
+  @@index([contractId])
+}
+
+model Submission {
+  id            String           @id @default(cuid())
+  contractId    String
+  description   String
+  externalLinks String[]         @default([])
+  fileUrls      String[]         @default([])
+  status        SubmissionStatus @default(PENDING)
+  submittedAt   DateTime         @default(now())
+  reviewedAt    DateTime?
+  contract      Contract         @relation(fields: [contractId], references: [id])
+
+  @@index([contractId, submittedAt])
+}
+
+model Review {
+  id                  String   @id @default(cuid())
+  contractId          String
+  reviewerId          String
+  revieweeId          String
+  rating              Int
+  qualityRating       Int
+  communicationRating Int
+  timelinessRating    Int
+  comment             String
+  isDemo              Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  contract            Contract @relation(fields: [contractId], references: [id])
+  reviewer            User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee            User     @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+
+  @@unique([contractId, reviewerId])
+  @@index([revieweeId])
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  contractId    String
+  clientId      String
+  studentId     String
+  amount        Int
+  platformFee   Int
+  studentPayout Int
+  type          TransactionType
+  status        TransactionStatus @default(ESCROWED)
+  isDemo        Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  releasedAt    DateTime?
+  contract      Contract          @relation(fields: [contractId], references: [id])
+  client        User              @relation("ClientTransactions", fields: [clientId], references: [id])
+  student       User              @relation("StudentTransactions", fields: [studentId], references: [id])
+
+  @@unique([contractId, type])
+  @@index([studentId])
+  @@index([clientId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  href      String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+model Message {
+  id         String    @id @default(cuid())
+  contractId String
+  senderId   String
+  body       String
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+  contract   Contract  @relation(fields: [contractId], references: [id])
+  sender     User      @relation(fields: [senderId], references: [id])
+
+  @@index([contractId, createdAt])
+  @@index([senderId])
+}
+
+model SkillEvidence {
+  id         String             @id @default(cuid())
+  studentId  String
+  skillId    String
+  contractId String
+  sourceType EvidenceSourceType
+  score      Float
+  isDemo     Boolean            @default(false)
+  metadata   Json?
+  createdAt  DateTime           @default(now())
+  student    User               @relation(fields: [studentId], references: [id])
+  skill      Skill              @relation(fields: [skillId], references: [id])
+  contract   Contract           @relation(fields: [contractId], references: [id])
+
+  @@unique([studentId, skillId, contractId, sourceType])
+  @@index([skillId])
+  @@index([contractId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  actor      User     @relation(fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+}
+
+model Bookmark {
+  userId    String
+  taskId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([userId, taskId])
+  @@index([taskId])
+}
+
+model Report {
+  id             String       @id @default(cuid())
+  reporterId     String
+  taskId         String?
+  reportedUserId String?
+  reason         String
+  description    String
+  status         ReportStatus @default(OPEN)
+  createdAt      DateTime     @default(now())
+  reporter       User         @relation("ReportsFiled", fields: [reporterId], references: [id])
+  task           Task?        @relation(fields: [taskId], references: [id])
+  reportedUser   User?        @relation("ReportedUsers", fields: [reportedUserId], references: [id])
+
+  @@index([status])
+  @@index([reporterId])
+  @@index([taskId])
+  @@index([reportedUserId])
+}
+
+model Dispute {
+  id          String        @id @default(cuid())
+  contractId  String
+  openedById  String
+  reason      String
+  description String
+  status      DisputeStatus @default(OPEN)
+  adminNotes  String?
+  resolution  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  contract    Contract      @relation(fields: [contractId], references: [id])
+  openedBy    User          @relation(fields: [openedById], references: [id])
+
+  @@index([contractId])
+  @@index([openedById])
+  @@index([status])
+}
+
+model Attachment {
+  id           String   @id @default(uuid())
+  userId       String
+  contractId   String
+  originalName String
+  mimeType     String
+  size         Int
+  storageKey   String   @unique
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+  contract     Contract @relation(fields: [contractId], references: [id])
+
+  @@index([userId])
+  @@index([contractId])
+}
